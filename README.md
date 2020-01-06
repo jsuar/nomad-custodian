@@ -1,6 +1,6 @@
 # Nomad Custodian
 
-Inspired by [Cloud Custodian](https://github.com/cloud-custodian/cloud-custodian), this simple CLI helps Nomad administrators manage Nomad job resources with cost optimization in mind.
+Inspired by [Cloud Custodian](https://github.com/cloud-custodian/cloud-custodian), this simple CLI will help Nomad administrators manage job resources with cost optimization and maintenance in mind.
 
 ## Features
 * Scale in all job task group counts to `count=1` during off business hours
@@ -19,19 +19,31 @@ nomad-custodian list
 To what changes will take place in a scale in all job task group counts to `1`:
 
 ```
-nomad-custodian scaleIn
+nomad-custodian scale-in
 ```
 
 To scale in all job task group counts to `1`:
 
 ```
-nomad-custodian scaleIn --force
+nomad-custodian scale-in --force
 ```
 
 To scale out all job task group counts to their original numbers:
 
 ```
-nomad-custodian scaleOut
+nomad-custodian scale-out
+```
+
+To backup all jobs registered in Nomad:
+
+```
+./nomad-custodian backup-jobs
+```
+
+To delete and purge all jobs registered in Nomad:
+
+```
+nomad-custodian delete-all-jobs -f -p
 ```
 
 ## Safety Controls
@@ -39,7 +51,7 @@ nomad-custodian scaleOut
 Prevent any custodian actions:
 
 ```
-?
+Nothing available at the moment
 ```
 
 Prevent changes on specific jobs:
@@ -69,3 +81,6 @@ make build
   * Namespaces
   * Job names
   * Time of day
+* Globally prevent custodian changes
+  * Enforce with Consul KV check
+  * Enforce some other way with Nomad
