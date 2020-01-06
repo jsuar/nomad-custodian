@@ -384,7 +384,7 @@ func (n *NomadHelper) DeleteAllJobs(force bool, autoApprove bool, purge bool, ve
 	fmt.Printf("\n%s\n", result)
 }
 
-// BackupJobs ...
+// BackupJobs will write JSON backups of all registered job
 func (n *NomadHelper) BackupJobs() {
 	jobs := n.Client.Jobs()
 	jobStubList, _, err := jobs.List(nil)
@@ -411,7 +411,7 @@ func (n *NomadHelper) BackupJobs() {
 
 		jobJSON, _ := json.Marshal(jobInfo)
 		filename := fmt.Sprintf("%s.json", *jobInfo.Name)
-		fmt.Printf("Writing %s to a file\n", *jobInfo.Name)
+		fmt.Printf("Job %s written to %s\n", *jobInfo.Name, filename)
 
 		err = ioutil.WriteFile(filepath.Join(dir, filepath.Base(filename)), jobJSON, 0644)
 		if err != nil {
