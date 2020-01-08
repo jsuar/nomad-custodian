@@ -18,6 +18,7 @@ import (
 // NomadHelper provides custodian helper functions
 type NomadHelper struct {
 	Client *nomad.Client
+	Config *nomad.Config
 }
 
 // ScaleType specifies scaling in or out
@@ -35,11 +36,20 @@ func (d ScaleType) String() string {
 
 // Init will initialize the NomadHelper object
 func (n *NomadHelper) Init() {
+	n.InitConfig(nomad.DefaultConfig())
+}
+
+// InitConfig will initialize the NomadHelper object
+func (n *NomadHelper) InitConfig(config *nomad.Config) {
 	var err error
-	nomadConfig := nomad.DefaultConfig()
-	n.Client, err = nomad.NewClient(nomadConfig)
+	n.Config = config
+	if n.Config == nil {
+		fmt.Printf("Nomad config is nil. Using default config instead.")
+		n.Config = nomad.DefaultConfig()
+	}
+	n.Client, err = nomad.NewClient(n.Config)
 	if err != nil {
-		fmt.Printf("Error encountered:%s\n", err)
+		panic(fmt.Sprintf("Error encountered: %s\n", err))
 	}
 }
 
