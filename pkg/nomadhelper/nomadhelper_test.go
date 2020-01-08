@@ -1,7 +1,6 @@
 package nomadhelper
 
 import (
-	"fmt"
 	"testing"
 
 	nomad "github.com/hashicorp/nomad/api"
@@ -12,9 +11,7 @@ func TestDisplayJobDiff(t *testing.T) {
 		diff nomad.JobDiff
 	}
 	fieldDiff := make([]*nomad.FieldDiff, 0)
-	fmt.Println("fieldDiff", fieldDiff)
 	fieldDiff = append(fieldDiff, &nomad.FieldDiff{"fieldType", "fieldName", "old", "new", make([]string, 0)})
-	fmt.Println("fieldDiff", fieldDiff)
 	tests := []struct {
 		name string
 		args args
