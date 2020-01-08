@@ -3,13 +3,17 @@ GOARCH=386
 
 .PHONY: build
 
-# GIT_COMMIT := $(shell git rev-list -1 HEAD)
-GIT_COMMIT := 9jd3j90j3
+GIT_COMMIT := $(shell git rev-list -1 HEAD)
 
 .PHONY: build
 build:
 	# GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-X main.gitCommit=$(GIT_COMMIT)" .
 	go build -ldflags "-X 'github.com/jsuar/nomad-custodian/cmd.gitCommit=$(GIT_COMMIT)'" .
+
+.PHONY: test
+test:
+	go test -timeout 30s github.com/jsuar/nomad-custodian/pkg/nomadhelper -v
+	
 
 .PHONY: load-jobs
 load-jobs:
