@@ -25,7 +25,7 @@ jobs:
         fi
 
     - name: Run tests
-      run: go test -timeout 30s github.com/jsuar/nomad-custodian/pkg/nomadhelper -v
-      
+      run: make test
+
     - name: Build with Make
       run: make build
