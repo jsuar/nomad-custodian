@@ -24,8 +24,8 @@ jobs:
             dep ensure
         fi
 
-    # - name: Build
-    #   run: go build -v .
-
+    - name: Run tests
+      run: go test -timeout 30s github.com/jsuar/nomad-custodian/pkg/nomadhelper -v
+      
     - name: Build with Make
       run: make build
