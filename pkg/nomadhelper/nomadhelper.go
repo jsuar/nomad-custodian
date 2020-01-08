@@ -317,7 +317,7 @@ func (n *NomadHelper) ListJobs(verbose bool) {
 func AskForConfirmation() bool {
 	var s string
 
-	fmt.Printf("(y/N): ")
+	fmt.Printf("Are you sure you want to continue? (y/N): ")
 	_, err := fmt.Scan(&s)
 	if err != nil {
 		panic(err)
