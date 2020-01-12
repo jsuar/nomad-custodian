@@ -1,3 +1,4 @@
-.DS_STORE
-nomad-custodian
-jobs-backup/
+    .DS_STORE
+    nomad-custodian
+    jobs-backup/
+    vendor/
