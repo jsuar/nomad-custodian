@@ -33,7 +33,7 @@ var rootCmd = &cobra.Command{
 	Use:   "nomad-custodian",
 	Short: "Nomad Custodian helps manage the jobs registered with Nomad",
 	Long: `Nomad Custodian provides some basic functions to help manage
-maintainance tasks and cost cutting measures on clusters running 
+maintenance tasks and cost cutting measures on clusters running 
 a large number of services.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
