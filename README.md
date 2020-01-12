@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/jsuar/nomad-custodian)](https://goreportcard.com/report/github.com/jsuar/nomad-custodian)
+
 # Nomad Custodian
 
 Inspired by [Cloud Custodian](https://github.com/cloud-custodian/cloud-custodian), this simple CLI will help Nomad administrators manage job resources with cost optimization and maintenance in mind.
