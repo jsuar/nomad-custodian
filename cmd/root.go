@@ -1,5 +1,6 @@
-/*Package cmd root contains the Cobra root cmd
-Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Package cmd handles all CLI calls
+/*
+Copyright © 2020 John Suarez jsuar@users.noreply.github.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

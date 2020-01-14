@@ -1,4 +1,4 @@
-// Package cmd deleteAllJobs contains the deleteAllJobs functionality
+// Package cmd handles all CLI calls
 /*
 Copyright © 2020 John Suarez jsuar@users.noreply.github.com
 
