@@ -13,10 +13,10 @@ build:
 .PHONY: test
 test:
 	go test -timeout 30s github.com/jsuar/nomad-custodian/pkg/nomadhelper -v
-	
 
 .PHONY: load-jobs
 load-jobs:
 	nomad run testing/demo-webapp.nomad
 	nomad run testing/nginx.nomad
 	nomad run testing/redis.nomad
+	nomad run testing/couchbase.nomad
