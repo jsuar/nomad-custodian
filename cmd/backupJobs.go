@@ -1,4 +1,4 @@
-// Package cmd backupJobs contains the backupJobs functionality
+// Package cmd handles all CLI calls
 /*
 Copyright © 2020 John Suarez jsuar@users.noreply.github.com
 
