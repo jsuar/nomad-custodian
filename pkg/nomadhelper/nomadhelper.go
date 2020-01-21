@@ -286,10 +286,7 @@ func (n *NomadHelper) ListJobs(verbose bool) {
 		fmt.Printf("Error encountered:%s\n", err)
 	}
 
-	if verbose {
-		fmt.Printf("Number of jobs running: %d\n", len(jobStubList))
-	}
-
+	serviceJobCount := 0
 	for _, jobStub := range jobStubList {
 		// Get the jobs object
 		jobInfo, _, err := jobs.Info(jobStub.ID, nil)
@@ -297,6 +294,11 @@ func (n *NomadHelper) ListJobs(verbose bool) {
 			fmt.Printf("Error encountered:%s\n", err)
 		}
 
+		if *jobInfo.Type != "service" {
+			continue
+		}
+
+		serviceJobCount++
 		// Display job plan diff
 		output = append(output, fmt.Sprintf("+|Job: %s|Status: %s|", *jobInfo.Name, *jobInfo.Status))
 		output = append(output, "|Field|Value|")
@@ -307,6 +309,10 @@ func (n *NomadHelper) ListJobs(verbose bool) {
 		for k, v := range jobInfo.Meta {
 			output = append(output, fmt.Sprintf("|%s|%s|", k, v))
 		}
+	}
+
+	if verbose {
+		fmt.Printf("Number of jobs running: %d\n", serviceJobCount)
 	}
 
 	result := columnize.SimpleFormat(output)
