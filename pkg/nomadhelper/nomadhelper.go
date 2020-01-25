@@ -271,7 +271,7 @@ func (n *NomadHelper) ApplyChanges(job *nomad.Job, wg *sync.WaitGroup) {
 }
 
 // ListJobs scales all jobs in to count=1 or out to the jobs original count
-func (n *NomadHelper) ListJobs(verbose bool) {
+func (n *NomadHelper) ListJobs(verbose bool, jobType string) {
 	var output []string
 
 	nomadConfig := nomad.DefaultConfig()
@@ -294,7 +294,7 @@ func (n *NomadHelper) ListJobs(verbose bool) {
 			fmt.Printf("Error encountered:%s\n", err)
 		}
 
-		if *jobInfo.Type != "service" {
+		if *jobInfo.Type != jobType {
 			continue
 		}
 

@@ -28,9 +28,12 @@ var listCmd = &cobra.Command{
 	Long: `The list command is a quick view of all jobs registered with Nomad with 
 count and meta data relevant to the nomad-custodian CLI.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		jobType, _ := cmd.Flags().GetString("job-type")
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
 		nhelper := new(nomadhelper.NomadHelper)
 		nhelper.Init()
-		nhelper.ListJobs(true)
+		nhelper.ListJobs(verbose, jobType)
 	},
 }
 
@@ -41,7 +44,8 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
+	listCmd.PersistentFlags().String("job-type", "service", "Job type to display")
+	listCmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
