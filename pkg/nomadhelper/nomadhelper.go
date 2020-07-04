@@ -12,6 +12,7 @@ import (
 	"time"
 
 	nomad "github.com/hashicorp/nomad/api"
+	"github.com/jsuar/go-cron-descriptor/pkg/crondescriptor"
 	"github.com/ryanuber/columnize"
 )
 
@@ -286,6 +287,14 @@ func (n *NomadHelper) ListJobs(verbose bool, jobType string) {
 		fmt.Printf("Error encountered:%s\n", err)
 	}
 
+	var cd *crondescriptor.CronDescriptor
+	if jobType == "batch" {
+		cd, err = crondescriptor.NewCronDescriptor("* * * * *")
+		if err != nil {
+			fmt.Printf("Error encountered:%s\n", err)
+		}
+	}
+
 	jobCount := 0
 	for _, jobStub := range jobStubList {
 		// Get the jobs object
@@ -313,7 +322,15 @@ func (n *NomadHelper) ListJobs(verbose bool, jobType string) {
 			output = append(output, fmt.Sprintf("|%s|%s|", k, v))
 		}
 		if jobType == "batch" && jobInfo.Periodic != nil {
-			output = append(output, fmt.Sprintf("|%s|%s|", "Periodic", *jobInfo.Periodic.Spec))
+			err := cd.Parse(*jobInfo.Periodic.Spec)
+			if err != nil {
+				fmt.Printf("Error encountered:%s\n", err)
+			}
+			cronDescription, err := cd.GetDescription(crondescriptor.Full)
+			if err != nil {
+				fmt.Printf("Error encountered:%s\n", err)
+			}
+			output = append(output, fmt.Sprintf("|%s|%s|%s|", "Periodic", *jobInfo.Periodic.Spec, *cronDescription))
 		}
 	}
 
