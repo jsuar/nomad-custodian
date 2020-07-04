@@ -1,6 +1,6 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/jsuar/nomad-custodian)](https://goreportcard.com/report/github.com/jsuar/nomad-custodian)
-
 # Nomad Custodian
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/jsuar/nomad-custodian)](https://goreportcard.com/report/github.com/jsuar/nomad-custodian) [![GoDoc](https://img.shields.io/badge/GoDoc-reference-007d9c?style=flat-square)](https://pkg.go.dev/github.com/jsuar/go-cron-descriptor/pkg/envconfig)
 
 Inspired by [Cloud Custodian](https://github.com/cloud-custodian/cloud-custodian), this simple CLI will help Nomad administrators manage job resources with cost optimization and maintenance in mind.
 
@@ -33,6 +33,18 @@ Number of jobs running: 4
    Count             2
    custodian-ignore  1
 ```
+
+### Listing Batch Type Jobs
+
+```
+nomad-custodian list --job-type batch
+
++  Job: ynab-bitcoin-sync  Status: running
+   Field                   Value
+   Count                   1
+   Periodic                */30 * * * *     Every 30 minutes
+```
+
 ## `scale-in`
 Excluding `--force` or `-f` with the `scale-in` and `scale-out` commands will provide a preview of what will change. For example, running `nomad-custodian scale-in` will provide the below output. 
 
@@ -178,6 +190,14 @@ To build the binary:
 
 ```
 make build
+```
+
+## Log Level
+
+Log level can be set by using the below environment variable.
+
+```
+export CRON_DESCRIPTOR_LOG_LEVEL=debug
 ```
 
 # Improvement / Feature Ideas
