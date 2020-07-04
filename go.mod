@@ -9,5 +9,6 @@ require (
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
+	go.uber.org/zap v1.15.0
 	golang.org/x/sys v0.0.0-20191008105621-543471e840be // indirect
 )

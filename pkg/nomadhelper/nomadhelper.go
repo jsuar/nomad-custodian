@@ -14,12 +14,14 @@ import (
 	nomad "github.com/hashicorp/nomad/api"
 	"github.com/jsuar/go-cron-descriptor/pkg/crondescriptor"
 	"github.com/ryanuber/columnize"
+	"go.uber.org/zap"
 )
 
 // NomadHelper provides custodian helper functions
 type NomadHelper struct {
 	Client *nomad.Client
 	Config *nomad.Config
+	Logger *zap.SugaredLogger
 }
 
 // ScaleType specifies scaling in or out
@@ -43,21 +45,38 @@ func (n *NomadHelper) Init() {
 // InitConfig will initialize the NomadHelper object
 func (n *NomadHelper) InitConfig(config *nomad.Config) {
 	var err error
+
+	logLevelEnvVar := os.Getenv("CRON_DESCRIPTOR_LOG_LEVEL")
+
+	cfg := zap.NewDevelopmentConfig()
+	switch logLevelEnvVar {
+	case "debug":
+		cfg.Level.SetLevel(zap.DebugLevel)
+	case "info":
+		cfg.Level.SetLevel(zap.InfoLevel)
+	case "warning":
+		cfg.Level.SetLevel(zap.WarnLevel)
+	case "error":
+		cfg.Level.SetLevel(zap.ErrorLevel)
+	default:
+		cfg.Level.SetLevel(zap.WarnLevel)
+	}
+
+	logger, err := cfg.Build()
+	if err != nil {
+		logger.Panic(err.Error())
+	}
+
+	n.Logger = logger.Sugar()
+
 	n.Config = config
 	if n.Config == nil {
-		fmt.Printf("Nomad config is nil. Using default config instead.")
+		logger.Info("Nomad config is nil. Using default config instead.")
 		n.Config = nomad.DefaultConfig()
 	}
 	n.Client, err = nomad.NewClient(n.Config)
 	if err != nil {
-		panic(fmt.Sprintf("Error encountered: %s\n", err))
-	}
-}
-
-func check(e error) {
-	if e != nil {
-		// panic(e)
-		fmt.Printf("%s\n", e)
+		logger.Panic(err.Error())
 	}
 }
 
@@ -91,30 +110,30 @@ func (n *NomadHelper) ScaleInJobs(force bool, verbose bool) {
 	var wg sync.WaitGroup
 
 	if !force && verbose {
-		fmt.Printf("Running a plan scale down action.\n")
+		n.Logger.Info("Running a plan scale down action.")
 	}
 
 	jobs := n.Client.Jobs()
 	jobStubList, _, err := jobs.List(nil)
 	if err != nil {
-		fmt.Printf("Error encountered: %s \n", err)
+		n.Logger.Error(err)
 	}
 
 	if verbose {
-		fmt.Printf("Number of jobs running: %d\n", len(jobStubList))
+		n.Logger.Info("Number of jobs running: %d\n", len(jobStubList))
 	}
 
 	for _, jobStub := range jobStubList {
 		// Get the jobs object
 		jobInfo, _, err := jobs.Info(jobStub.ID, nil)
 		if err != nil {
-			fmt.Printf("Error encountered: %s", err)
+			n.Logger.Error(err)
 		}
 
 		custodianIgnore, err := strconv.ParseBool(jobInfo.Meta["custodian-ignore"])
 		if err != nil {
 			if jobInfo.Meta["custodian-ignore"] != "" {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 		}
 
@@ -144,10 +163,10 @@ func (n *NomadHelper) ScaleInJobs(force bool, verbose bool) {
 		// Plan the change and get the response/diff
 		jobPlanResponse, _, err := jobs.Plan(jobInfo, true, nil)
 		if err != nil {
-			fmt.Printf("Error encountered: %s", err)
+			n.Logger.Error(err)
 		}
 		diff := *jobPlanResponse.Diff
-		fmt.Printf("Job: %s, %s\n", *jobInfo.Name, *jobInfo.Status)
+		n.Logger.Infof("Job: %s, %s\n", *jobInfo.Name, *jobInfo.Status)
 		DisplayJobDiff(diff)
 
 		if force {
@@ -176,24 +195,24 @@ func (n *NomadHelper) ScaleOutJobs(force bool, verbose bool) {
 	jobs := n.Client.Jobs()
 	jobStubList, _, err := jobs.List(nil)
 	if err != nil {
-		fmt.Printf("Error encountered: %s", err)
+		n.Logger.Error(err)
 	}
 
 	if verbose {
-		fmt.Printf("Number of jobs running: %d\n", len(jobStubList))
+		n.Logger.Infof("Number of jobs running: %d\n", len(jobStubList))
 	}
 
 	for _, jobStub := range jobStubList {
 		// Get the jobs object
 		jobInfo, _, err := jobs.Info(jobStub.ID, nil)
 		if err != nil {
-			fmt.Printf("Error encountered:%s\n", err)
+			n.Logger.Error(err)
 		}
 
 		custodianIgnore, err := strconv.ParseBool(jobInfo.Meta["custodian-ignore"])
 		if err != nil {
 			if jobInfo.Meta["custodian-ignore"] != "" {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 		}
 
@@ -206,13 +225,13 @@ func (n *NomadHelper) ScaleOutJobs(force bool, verbose bool) {
 			// Convert to uint64 for revert function
 			previousVer, err := strconv.ParseUint(jobInfo.Meta["custodian-revert-version"], 10, 64)
 			if err != nil {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 
 			includeDiffs := false
 			pastJobs, _, _, err := jobs.Versions(jobStub.ID, includeDiffs, nil)
 			if err != nil {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 
 			for _, pastJob := range pastJobs {
@@ -220,10 +239,10 @@ func (n *NomadHelper) ScaleOutJobs(force bool, verbose bool) {
 					// Plan the change and get the response/diff
 					jobPlanResponse, _, err := jobs.Plan(pastJob, true, nil)
 					if err != nil {
-						fmt.Printf("Error encountered:%s\n", err)
+						n.Logger.Error(err)
 					}
 					diff := *jobPlanResponse.Diff
-					fmt.Printf("Job: %s, %s\n", *jobInfo.Name, *jobInfo.Status)
+					n.Logger.Infof("Job: %s, %s\n", *jobInfo.Name, *jobInfo.Status)
 					DisplayJobDiff(diff)
 					break
 				}
@@ -233,10 +252,10 @@ func (n *NomadHelper) ScaleOutJobs(force bool, verbose bool) {
 				// Handle revert response
 				jobRegisterResponse, _, err := jobs.Revert(*jobInfo.ID, previousVer, nil, nil, "")
 				if err != nil {
-					fmt.Printf("Error encountered:%s\n", err)
+					n.Logger.Error(err)
 				}
 				if jobRegisterResponse.Warnings != "" {
-					fmt.Printf("Warnings: %s\n", jobRegisterResponse.Warnings)
+					n.Logger.Infof("Warnings: %s\n", jobRegisterResponse.Warnings)
 				}
 			}
 		} else {
@@ -259,13 +278,13 @@ func (n *NomadHelper) ScaleOutJobs(force bool, verbose bool) {
 func (n *NomadHelper) ApplyChanges(job *nomad.Job, wg *sync.WaitGroup) {
 	jobs := n.Client.Jobs()
 
-	// fmt.Printf("\nApplying changes to job %s\n", *job.Name)
+	// n.Logger.Infof("\nApplying changes to job %s\n", *job.Name)
 	jobRegisterResponse, _, err := jobs.Register(job, nil)
 	if err != nil {
-		fmt.Printf("Error encountered:%s\n", err)
+		n.Logger.Error(err)
 	}
 	if jobRegisterResponse.Warnings != "" {
-		fmt.Printf("Warnings: %s\n", jobRegisterResponse.Warnings)
+		n.Logger.Infof("Warnings: %s\n", jobRegisterResponse.Warnings)
 	}
 
 	wg.Done()
@@ -278,20 +297,20 @@ func (n *NomadHelper) ListJobs(verbose bool, jobType string) {
 	nomadConfig := nomad.DefaultConfig()
 	nomadClient, err := nomad.NewClient(nomadConfig)
 	if err != nil {
-		fmt.Printf("Error encountered:%s\n", err)
+		n.Logger.Error(err)
 	}
 
 	jobs := nomadClient.Jobs()
 	jobStubList, _, err := jobs.List(nil)
 	if err != nil {
-		fmt.Printf("Error encountered:%s\n", err)
+		n.Logger.Error(err)
 	}
 
 	var cd *crondescriptor.CronDescriptor
 	if jobType == "batch" {
 		cd, err = crondescriptor.NewCronDescriptor("* * * * *")
 		if err != nil {
-			fmt.Printf("Error encountered:%s\n", err)
+			n.Logger.Error(err)
 		}
 	}
 
@@ -300,7 +319,7 @@ func (n *NomadHelper) ListJobs(verbose bool, jobType string) {
 		// Get the jobs object
 		jobInfo, _, err := jobs.Info(jobStub.ID, nil)
 		if err != nil {
-			fmt.Printf("Error encountered:%s\n", err)
+			n.Logger.Error(err)
 		}
 
 		if *jobInfo.Type != jobType {
@@ -324,25 +343,25 @@ func (n *NomadHelper) ListJobs(verbose bool, jobType string) {
 		if jobType == "batch" && jobInfo.Periodic != nil {
 			err := cd.Parse(*jobInfo.Periodic.Spec)
 			if err != nil {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 			cronDescription, err := cd.GetDescription(crondescriptor.Full)
 			if err != nil {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 			output = append(output, fmt.Sprintf("|%s|%s|%s|", "Periodic", *jobInfo.Periodic.Spec, *cronDescription))
 		}
 	}
 
 	if verbose {
-		fmt.Printf("Number of jobs running: %d\n", jobCount)
+		n.Logger.Infof("Number of jobs running: %d\n", jobCount)
 	}
 
 	result := columnize.SimpleFormat(output)
 	if jobCount == 0 {
 		result = "No jobs present"
 	}
-	fmt.Printf("\n%s\n", result)
+	fmt.Printf("%s\n", result)
 }
 
 // AskForConfirmation prompts the user for confirmation before proceeding
@@ -373,7 +392,7 @@ func (n *NomadHelper) DeleteAllJobs(force bool, autoApprove bool, purge bool, ve
 	jobs := n.Client.Jobs()
 	jobStubList, _, err := jobs.List(nil)
 	if err != nil {
-		fmt.Printf("Error encountered: %s", err)
+		n.Logger.Error(err)
 	}
 
 	if force {
@@ -388,13 +407,13 @@ func (n *NomadHelper) DeleteAllJobs(force bool, autoApprove bool, purge bool, ve
 		// Get the jobs object
 		jobInfo, _, err := jobs.Info(jobStub.ID, nil)
 		if err != nil {
-			fmt.Printf("Error encountered:%s\n", err)
+			n.Logger.Error(err)
 		}
 
 		custodianIgnore, err := strconv.ParseBool(jobInfo.Meta["custodian-ignore"])
 		if err != nil {
 			if jobInfo.Meta["custodian-ignore"] != "" {
-				fmt.Printf("Error encountered:%s\n", err)
+				n.Logger.Error(err)
 			}
 		}
 
@@ -407,12 +426,12 @@ func (n *NomadHelper) DeleteAllJobs(force bool, autoApprove bool, purge bool, ve
 			if userConfirmation {
 				deregisterResponse, _, err := jobs.Deregister(jobStub.ID, purge, nil)
 				if err != nil {
-					fmt.Printf("Error encountered: %s", err)
+					n.Logger.Error(err)
 				}
-				fmt.Printf("Job %s deregister response: %s", jobStub.Name, deregisterResponse)
+				n.Logger.Infof("Job %s deregister response: %s", jobStub.Name, deregisterResponse)
 
 			}
-			fmt.Printf("Action: Deregister, Job: %s\n", jobStub.Name)
+			n.Logger.Infof("Action: Deregister, Job: %s\n", jobStub.Name)
 		}
 	}
 
@@ -423,7 +442,7 @@ func (n *NomadHelper) DeleteAllJobs(force bool, autoApprove bool, purge bool, ve
 		output = append(output, jobsSkipped...)
 	}
 	result := columnize.SimpleFormat(output)
-	fmt.Printf("\n%s\n", result)
+	fmt.Printf("%s\n", result)
 }
 
 // BackupJobs will write JSON backups of all registered job
@@ -431,29 +450,33 @@ func (n *NomadHelper) BackupJobs() {
 	jobs := n.Client.Jobs()
 	jobStubList, _, err := jobs.List(nil)
 	if err != nil {
-		fmt.Printf("Error encountered: %s", err)
+		n.Logger.Error(err)
 	}
 
 	dir := fmt.Sprintf("jobs-backup")
 	err = os.Mkdir(dir, 0755)
-	check(err)
+	if err != nil {
+		n.Logger.Error(err)
+	}
 
 	now := time.Now()
 	secs := now.Unix()
 	dir = fmt.Sprintf("jobs-backup/%d/", secs)
 	err = os.Mkdir(dir, 0755)
-	check(err)
+	if err != nil {
+		n.Logger.Error(err)
+	}
 
 	for _, jobStub := range jobStubList {
 		// Get the jobs object
 		jobInfo, _, err := jobs.Info(jobStub.ID, nil)
 		if err != nil {
-			fmt.Printf("Error encountered:%s\n", err)
+			n.Logger.Error(err)
 		}
 
 		jobJSON, _ := json.Marshal(jobInfo)
 		filename := fmt.Sprintf("%s.json", *jobInfo.Name)
-		fmt.Printf("Job %s written to %s\n", *jobInfo.Name, filename)
+		n.Logger.Infof("Job %s written to %s\n", *jobInfo.Name, filename)
 
 		err = ioutil.WriteFile(filepath.Join(dir, filepath.Base(filename)), jobJSON, 0644)
 		if err != nil {
