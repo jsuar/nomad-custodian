@@ -33,6 +33,18 @@ Number of jobs running: 4
    Count             2
    custodian-ignore  1
 ```
+
+### Listing Batch Type Jobs
+
+```
+nomad-custodian list --job-type batch
+
++  Job: ynab-bitcoin-sync  Status: running
+   Field                   Value
+   Count                   1
+   Periodic                */30 * * * *     Every 30 minutes
+```
+
 ## `scale-in`
 Excluding `--force` or `-f` with the `scale-in` and `scale-out` commands will provide a preview of what will change. For example, running `nomad-custodian scale-in` will provide the below output. 
 
